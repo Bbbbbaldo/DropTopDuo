@@ -200,4 +200,4 @@ Ispirato all'idea delle scrivanie a muro con ribalta e regolazione in altezza in
 
 ## Licenza
 
-Documentazione e disegni: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.it) — puoi copiare, modificare e condividere, anche per uso commerciale, citando l'autore e mantenendo la stessa licenza.
+Documentazione e disegni: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/deed.it) — pubblico dominio. Puoi farne quello che vuoi, anche per uso commerciale, senza chiedere permesso e senza obbligo di citare l'autore. Testo completo nel file [LICENSE](LICENSE).
