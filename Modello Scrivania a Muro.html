@@ -1,0 +1,588 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Modello Scrivania a Muro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco di lavoro — modello 3D a sinistra, scheda del pezzo ed elenco componenti a destra, comandi sotto */
+:root{
+  --bg:#F1F3F4; --stage:#E6E9EB; --panel:#FFFFFF; --ink:#1B2329; --muted:#5D6A72; --line:#D3DADF;
+  --accent:#2F7FA0; --accent-ink:#FFFFFF; --chip:rgba(255,255,255,.93);
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171B; --stage:#1B2227; --panel:#1A2127; --ink:#E3E8EB; --muted:#93A1AA; --line:#2E3840;
+  --accent:#6DBBDB; --accent-ink:#0B1A21; --chip:rgba(26,33,39,.93); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171B; --stage:#1B2227; --panel:#1A2127; --ink:#E3E8EB; --muted:#93A1AA; --line:#2E3840;
+  --accent:#6DBBDB; --accent-ink:#0B1A21; --chip:rgba(26,33,39,.93); color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,5vw,38px);line-height:1.05;margin:0;text-wrap:balance}
+.lead{margin:0;color:var(--muted);max-width:72ch}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:start}
+@media (max-width:880px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;height:clamp(400px,70vh,700px);background:var(--stage);border:1px solid var(--line);border-radius:8px;overflow:hidden;touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+.lbl{position:absolute;left:0;top:0;font:600 12px/1.2 var(--f-body);background:var(--chip);color:var(--ink);padding:3px 7px;border-radius:3px;border:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.lbl::after{content:"";position:absolute;left:50%;bottom:-7px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ink)}
+.lbl.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.readout{position:absolute;left:12px;bottom:12px;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:6px 9px;max-width:calc(100% - 24px)}
+.modes{position:absolute;left:12px;top:12px;display:flex;gap:0;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--chip)}
+.modes button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.modes button:last-child{border-right:0}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card h2{margin:0;font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.1;text-wrap:balance}
+.qty{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.card p{margin:0;font-size:14px}
+.card .k{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.card .dims{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.list{list-style:none;margin:0;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:6px;max-height:420px;overflow:auto}
+.list li+li{border-top:1px solid var(--line)}
+.list button{width:100%;border:0;border-radius:0;text-align:left;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 12px;background:transparent}
+.list .n{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.list .q{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.list .grp{padding:6px 12px;font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--stage)}
+.list button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.list button[aria-pressed="true"] .n,.list button[aria-pressed="true"] .q{color:var(--accent-ink)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.group h3{margin:0;font-family:var(--f-mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:500 14px var(--f-body);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:4px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--ink)}
+.modes button:hover{background:var(--stage)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);margin:0;max-width:90ch}
+.err{padding:20px}
+.sec{width:100%;max-width:640px;min-width:520px;height:auto;display:block}
+.s-alu2{fill:#A9B1B7;stroke:#6B747B;stroke-width:1}
+.s-wall{fill:var(--stage);stroke:var(--muted);stroke-width:1}
+.s-wood{fill:#E0C796;stroke:#8A6E3E;stroke-width:1}
+.s-leg{fill:#3E444A}.s-leg3{fill:#50575E}.s-ghost{fill:var(--stage);stroke:var(--muted);stroke-width:1;stroke-dasharray:4 3}.s-rub{fill:#1B1D20}.s-ply{fill:#E7D4AE;stroke:#8A6E3E;stroke-width:1}.s-bolt2{stroke:#5B6168;stroke-width:3}.s-leg2{fill:#2A2E33}
+.s-iron{fill:#4A5157;stroke:#1B2329;stroke-width:.8}
+.s-alu{fill:#C9CED2;stroke:#6B747B;stroke-width:1}
+.s-nut{fill:#8C949A;stroke:#1B2329;stroke-width:.6}
+.s-bolt{stroke:#5B6168;stroke-width:4}
+.s-axis{stroke:var(--accent);stroke-width:2;stroke-dasharray:7 5}
+.s-arrow{fill:var(--accent)}.s-arrowl{stroke:var(--accent);stroke-width:3}
+.s-lead{stroke:var(--muted);stroke-width:1}.s-dot{fill:var(--ink)}
+.s-t{font:600 14px var(--f-body);fill:var(--ink)}.s-s{font:400 12px var(--f-body);fill:var(--muted)}
+
+.iron{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.iron h2{margin:0;font-family:var(--f-display);font-size:24px;font-weight:600}
+.tw{overflow-x:auto}
+.iron table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+.iron th{text-align:left;font-family:var(--f-mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.iron td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.iron .num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.iron tfoot td{font-weight:600;border-bottom:0}
+.pl{padding:2px 8px;font-weight:600;white-space:nowrap}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Modello 3D · misure in cm · versione 11 · lamiera 2 mm con rinforzi</div>
+    <h1>Modello Scrivania a Muro</h1>
+    <p class="lead">Trascina per girare, rotella o due dita per lo zoom. Usa <b>Esploso</b> per staccare tutti i pezzi, oppure scegli un componente e premi <b>Pezzo singolo</b> per vederlo da solo, con le misure e a cosa si collega.</p>
+  </header>
+
+  <div class="main">
+    <div class="stage" id="stage">
+      <div class="modes" role="group" aria-label="Modalità">
+        <button type="button" id="mAss" aria-pressed="true">Montato</button>
+        <button type="button" id="mExp" aria-pressed="false">Esploso</button>
+        <button type="button" id="mIso" aria-pressed="false">Pezzo singolo</button>
+      </div>
+      <div class="readout" id="readout"></div>
+    </div>
+
+    <aside class="side">
+      <div class="card" id="info">
+        <div class="k" id="iNum">Nessun pezzo scelto</div>
+        <h2 id="iName">Tocca un pezzo</h2>
+        <div class="qty" id="iQty">Scegli un componente dall'elenco o tocca un'etichetta nel modello.</div>
+        <p id="iDesc"></p>
+        <div class="k" id="iConK" hidden>Come si collega</div>
+        <p id="iCon"></p>
+        <div class="dims" id="iDims"></div>
+        <div class="nav">
+          <button type="button" id="prev">← Precedente</button>
+          <button type="button" id="next">Successivo →</button>
+          <button type="button" id="clear">Mostra tutto</button>
+        </div>
+      </div>
+      <ul class="list" id="list"></ul>
+    </aside>
+  </div>
+
+  <div class="controls">
+    <div class="group">
+      <h3>Altezza</h3>
+      <input type="range" id="h" min="73" max="122" step="1" value="73" aria-label="Altezza del piano in centimetri">
+      <div class="row"><button id="sit" type="button">Seduto · 73 cm</button><button id="stand" type="button">In piedi · 110 cm</button></div>
+    </div>
+    <div class="group">
+      <h3>Mostra</h3>
+      <div class="row">
+        <button id="flap" type="button" aria-pressed="true">Piano aperto</button>
+        <button id="xray" type="button" aria-pressed="true">Mobile trasparente</button>
+        <button id="labels" type="button" aria-pressed="true">Etichette</button>
+        <button id="iron" type="button" aria-pressed="false">Evidenzia ferro</button>
+      </div>
+    </div>
+    <div class="group">
+      <h3>Vista</h3>
+      <div class="row">
+        <button type="button" data-view="iso">3/4</button>
+        <button type="button" data-view="front">Davanti</button>
+        <button type="button" data-view="side">Di lato</button>
+        <button type="button" data-view="back">Da dietro, senza muro</button>
+        <button type="button" data-view="axis">Gamba di lato, da vicino</button>
+      </div>
+    </div>
+  </div>
+  <section class="iron">
+    <h2>Sezione sopra la gamba</h2>
+    <p class="hint">Vista di lato, tagliata al centro di una gamba, in scala, con le misure reali delle gambe. La linea tratteggiata è l'asse della gamba: la piega della lastra ci sta sopra, quindi la spinta sale dritta. In grigio chiaro i pezzi dietro il taglio: un fianco dell'omega e un fazzoletto. Il tubo 40 × 40 del rinforzo sta tra le gambe, quindi qui non si vede.</p>
+    <div class="tw"><svg viewBox="0 0 640 640" role="img" aria-label="Sezione laterale: gamba, omega e lastra a L" class="sec"><rect x="20.0" y="20.0" width="36.0" height="552.0" class="s-wall"/><rect x="56.0" y="200.0" width="33.6" height="372.0" class="s-wood"/><path d="M210.8 176 L210.8 320 L114.80000000000001 176 Z" class="s-ghost"/><rect x="89.6" y="392.0" width="112.2" height="120.0" class="s-ghost"/><rect x="89.6" y="374.0" width="12.6" height="198.0" class="s-ply"/><rect x="104.6" y="374.0" width="90.0" height="198.0" class="s-leg"/><rect x="108.8" y="281.0" width="81.6" height="117.0" class="s-leg3"/><rect x="113.0" y="188.0" width="73.2" height="120.0" class="s-leg"/><rect x="101.0" y="176.0" width="97.2" height="12.0" class="s-leg2"/><rect x="194.6" y="404.0" width="2.4" height="96.0" class="s-rub"/><rect x="197.0" y="392.0" width="4.8" height="120.0" class="s-iron"/><rect x="92.0" y="172.4" width="122.4" height="3.6" class="s-iron"/><rect x="210.8" y="172.4" width="3.6" height="399.6" class="s-iron"/><rect x="214.4" y="20.0" width="21.6" height="552.0" class="s-wood"/><line x1="204.8" y1="440" x2="243.20000000000002" y2="440" class="s-bolt2"/><rect x="236.0" y="431.6" width="6.0" height="16.8" class="s-nut"/><rect x="204.8" y="432.8" width="6.0" height="14.4" class="s-nut"/><line x1="204.8" y1="248" x2="243.20000000000002" y2="248" class="s-bolt2"/><rect x="236.0" y="239.6" width="6.0" height="16.8" class="s-nut"/><rect x="204.8" y="240.8" width="6.0" height="14.4" class="s-nut"/><rect x="114.2" y="167.6" width="8.4" height="16.8" class="s-nut"/><rect x="176.6" y="167.6" width="8.4" height="16.8" class="s-nut"/><line x1="149.60000000000002" y1="578.0" x2="149.60000000000002" y2="140" class="s-axis"/><path d="M149.60000000000002 242.0 l-7 12 h14 Z" class="s-arrow"/><line x1="149.60000000000002" y1="344" x2="149.60000000000002" y2="250.39999999999986" class="s-arrowl"/><line x1="176.0" y1="174.2" x2="272.0" y2="64.0" class="s-lead"/><circle cx="176.0" cy="174.2" r="2.5" class="s-dot"/><text x="278.0" y="62.0" class="s-t">Piega della lastra</text><text x="278.0" y="78.0" class="s-s">sulla testa della gamba, 4 viti</text><line x1="188.0" y1="236.0" x2="272.0" y2="136.0" class="s-lead"/><circle cx="188.0" cy="236.0" r="2.5" class="s-dot"/><text x="278.0" y="134.0" class="s-t">Fazzoletto 4 mm</text><text x="278.0" y="150.0" class="s-s">dietro, uno per lato della gamba</text><line x1="212.6" y1="332.0" x2="272.0" y2="214.0" class="s-lead"/><circle cx="212.6" cy="332.0" r="2.5" class="s-dot"/><text x="278.0" y="212.0" class="s-t">Parte verticale, 45 cm</text><text x="278.0" y="228.0" class="s-s">lamiera 2 mm, imbullonata alla schiena</text><line x1="225.2" y1="128.0" x2="272.0" y2="292.0" class="s-lead"/><circle cx="225.2" cy="128.0" r="2.5" class="s-dot"/><text x="278.0" y="290.0" class="s-t">Schiena del mobile</text><text x="278.0" y="306.0" class="s-s">bulloni M6 passanti, rondelle larghe</text><line x1="199.4" y1="488.0" x2="272.0" y2="376.0" class="s-lead"/><circle cx="199.4" cy="488.0" r="2.5" class="s-dot"/><text x="278.0" y="374.0" class="s-t">Omega 4 mm</text><text x="278.0" y="390.0" class="s-s">interno 47 × 90, ali al muro</text><line x1="128.0" y1="524.0" x2="272.0" y2="454.0" class="s-lead"/><circle cx="128.0" cy="524.0" r="2.5" class="s-dot"/><text x="278.0" y="452.0" class="s-t">Gamba, tubo 43 × 75</text><text x="278.0" y="468.0" class="s-s">lato da 75 verso la stanza</text><line x1="95.6" y1="548.0" x2="272.0" y2="532.0" class="s-lead"/><circle cx="95.6" cy="548.0" r="2.5" class="s-dot"/><text x="278.0" y="530.0" class="s-t">Listello 12 mm</text><text x="278.0" y="546.0" class="s-s">riempie lo spazio dietro il tubo</text><line x1="72.8" y1="560.0" x2="272.0" y2="610.0" class="s-lead"/><circle cx="72.8" cy="560.0" r="2.5" class="s-dot"/><text x="278.0" y="608.0" class="s-t">Listone a muro</text><text x="278.0" y="624.0" class="s-s">abete 28 mm</text><text x="38.0" y="14" class="s-s" text-anchor="middle">muro</text></svg></div>
+  </section>
+  <section class="iron">
+    <h2>Struttura di ferro: cosa serve</h2>
+    <p class="hint">Versione con il progetto della ferramenta, lamiera da 2 mm con rinforzi: due omega per gamba e una lastra piegata a L che si avvita sulle teste delle gambe e scende per 45 cm dietro la schiena. Premi <b>Evidenzia ferro</b> per vederla da sola; tocca un nome per vedere il pezzo.</p>
+    <div class="tw"><table>
+      <thead><tr><th>Pezzo</th><th>Cosa chiedere</th><th>Qtà</th><th>Dove</th><th class="num">Stima</th></tr></thead>
+      <tbody>
+        <tr><td><button type="button" class="pl" data-part="lastra">Lastra a L</button></td><td>Lamiera 2 mm, larga 1200 mm, meglio nera (DC01) da verniciare dopo: la zincata si salda male. Piega in alto da 102 mm con 4 fori per gamba come la testa della gamba; parte verticale da 450 mm con 12 fori Ø 7 per la schiena e 4 per il supporto monitor.</td><td>1</td><td>Ferramenta o fabbro, piega a pressa</td><td class="num">30–55 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="rinforzo">Rinforzo della piega</button></td><td>Tubo 40 × 40 × 2 mm lungo 1000 mm saldato nell'angolo della piega (cordoni di 3 cm ogni 15 cm), 4 fazzoletti triangolari 120 × 80 × 4 mm ai lati delle gambe, 2 piastre 120 × 100 × 6 mm sopra la piega, una per testa di gamba, con gli stessi 4 fori.</td><td>1 + 4 + 2</td><td>Fabbro</td><td class="num">30–45 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="morsetti">Morsetti a omega</button></td><td>Lamiera 4 mm, alta 100 mm. Interno 47 × 90 mm: tubo 43 × 75, più listello 12 mm dietro e gomma 2 mm. Ali da 40 mm con 2 fori Ø 9 ciascuna.</td><td>4</td><td>Ferramenta o fabbro</td><td class="num">30–50 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="staffe">Staffe a mensola</button></td><td>Ala 260 × 200 × 6 mm con 4 fori Ø 11. Braccio a vaschetta: fondo 200 × 104 × 8 mm con bordo da 30 mm davanti e ai lati, dove entra la scatola del motore (19 × 10 × 5,5 cm); fori nel bordo allineati con quelli che la scatola ha sui fianchi. Fazzoletto da 6 mm saldato sotto.</td><td>2</td><td>Fabbro</td><td class="num">35–55 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="squadrette">Squadrette interne</button></td><td>Angolari d'acciaio 40 × 40 mm, con viti da legno 4 × 25.</td><td>4</td><td>Ferramenta</td><td class="num">5–10 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="tasselli">Tasselli chimici M10</button></td><td>Barre filettate M10 tagliate a 15 cm, dado, rondella, 1 cartuccia di resina da 300 ml.</td><td>20</td><td>Ferramenta</td><td class="num">30–40 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="morsetti">Barre M8 degli omega</button></td><td>Barre filettate M8 tagliate a 18 cm, incollate nel muro con la stessa resina; dadi autobloccanti e rondelle.</td><td>16</td><td>Ferramenta</td><td class="num">10–15 €</td></tr>
+        <tr><td><button type="button" class="pl" data-part="lastra">Bulloneria</button></td><td>12 bulloni M6 × 40 per lastra e schiena, 4 M6 × 50 per il supporto monitor, rondelle larghe Ø 25. Le gambe usano le loro viti.</td><td>16</td><td>Ferramenta</td><td class="num">8–12 €</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="4">Totale ferro, stimato</td><td class="num">≈ 180–290 €</td></tr></tfoot>
+    </table></div>
+    <p class="hint">Gambe: tubo grosso 43 × 75 mm, alte da 66 a 115 cm (49 cm di corsa). In basso la scatola del motore, 19 × 10 × 5,5 cm, con il tubo a un'estremità: va con il lato da 19 lungo il muro e rivolta verso il centro, nascosta dietro il mobile. Non forarla: usa i fori che ha sui fianchi. Prima di far piegare la lastra, controlla sulla gamba la posizione dei 4 fori in testa.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const stage=document.getElementById('stage');
+if(!window.THREE||!THREE.OrbitControls){stage.insertAdjacentHTML('afterbegin','<p class="err">Il modello 3D non si è caricato. Ricarica la pagina.</p>');return;}
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(35,1,0.5,4000);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.minDistance=8;controls.maxDistance=900;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x8a8070,0.65));
+const sun=new THREE.DirectionalLight(0xffffff,0.75);sun.position.set(-160,320,280);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-240,right:240,top:280,bottom:-80,near:10,far:1000});sun.shadow.bias=-0.0004;
+scene.add(sun);
+const l2=new THREE.DirectionalLight(0xffffff,0.3);l2.position.set(220,120,240);scene.add(l2);
+const l3=new THREE.DirectionalLight(0xffffff,0.4);l3.position.set(120,200,-280);scene.add(l3);
+
+// room
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(380,280),new THREE.MeshStandardMaterial({color:0xE2DFD8,roughness:.95}));
+wall.position.set(0,140,0);wall.receiveShadow=true;scene.add(wall);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(380,300),new THREE.MeshStandardMaterial({color:0xB8A487,roughness:.85}));
+floor.rotation.x=-Math.PI/2;floor.position.set(0,0,150);floor.receiveShadow=true;scene.add(floor);
+const moving=new THREE.Group();moving.position.z=4.6;scene.add(moving);
+
+// ---------- geometry helpers
+function alongY(shape,L){const g=new THREE.ExtrudeGeometry(shape,{depth:L,bevelEnabled:false,curveSegments:8});g.rotateX(Math.PI/2);g.translate(0,L/2,0);return g;}
+function alongX(shape,L){const g=new THREE.ExtrudeGeometry(shape,{depth:L,bevelEnabled:false,curveSegments:8});g.rotateY(Math.PI/2);g.translate(-L/2,0,0);return g;}
+function slotProfile(w,h){
+ const pts=[];
+ const sides=[[-w/2,-h/2,1,0,0,1,w],[w/2,-h/2,0,1,-1,0,h],[w/2,h/2,-1,0,0,-1,w],[-w/2,h/2,0,-1,1,0,h]];
+ for(const [ax,ay,dx,dy,nx,ny,len] of sides){
+  pts.push([ax,ay]);
+  const n=Math.round(len/4);
+  for(let i=0;i<n;i++){const c=2+4*i;
+   for(const [t,d] of [[c-.4,0],[c-.4,.22],[c-.75,.22],[c-.75,.85],[c-.3,1.2],[c+.3,1.2],[c+.75,.85],[c+.75,.22],[c+.4,.22],[c+.4,0]])
+    pts.push([ax+dx*t+nx*d,ay+dy*t+ny*d]);}
+ }
+ const s=new THREE.Shape();s.moveTo(pts[0][0],pts[0][1]);for(const p of pts.slice(1))s.lineTo(p[0],p[1]);s.closePath();
+ for(let i=0;i<Math.round(w/4);i++)for(let j=0;j<Math.round(h/4);j++){const hole=new THREE.Path();hole.absarc(-w/2+2+4*i,-h/2+2+4*j,.34,0,Math.PI*2,true);s.holes.push(hole);}
+ return s;
+}
+function shapeOf(pts){const s=new THREE.Shape();s.moveTo(pts[0][0],pts[0][1]);for(const p of pts.slice(1))s.lineTo(p[0],p[1]);s.closePath();return s;}
+const railShape=shapeOf([[-.75,0],[.75,0],[.75,-.55],[.6,-.7],[.75,-.85],[.75,-1.5],[-.75,-1.5],[-.75,-.85],[-.6,-.7],[-.75,-.55]]); // y: 0 base (verso telaio) → -1.5 cima (verso muro)
+function rectTube(w,h,t){const s=shapeOf([[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]]);const hp=new THREE.Path();const a=w/2-t,b=h/2-t;hp.moveTo(-a,-b);hp.lineTo(-a,b);hp.lineTo(a,b);hp.lineTo(a,-b);hp.closePath();s.holes.push(hp);return s;}
+const carShape=shapeOf([[-1.7,2.1],[1.7,2.1],[1.7,4.1],[.85,4.1],[.85,2.75],[-.85,2.75],[-.85,4.1],[-1.7,4.1]]);
+
+// ---------- parts registry
+const parts=[];
+const C={
+ birch:[0xE7D4AE,{roughness:.7}], fir:[0xEAD7AE,{roughness:.75}], fir28:[0xE0C796,{roughness:.75}], beech:[0xD9A877,{roughness:.7}], birch21:[0xD2B585,{roughness:.75}],
+ alu:[0xC9CED2,{metalness:.75,roughness:.35}], steel:[0xB9C0C5,{metalness:.85,roughness:.3}], rail:[0xD6DBDF,{metalness:.9,roughness:.22}],
+ black:[0x2A2E33,{metalness:.4,roughness:.5}], iron:[0x3C4248,{metalness:.55,roughness:.55}], rubber:[0x1B1D20,{roughness:.95}],
+ zinc:[0xC7CBC2,{metalness:.8,roughness:.35}], red:[0x9A2A22,{roughness:.6}], screw:[0x5B6168,{metalness:.7,roughness:.4}],
+ plastic:[0xF2F2EF,{roughness:.6}], screen:[0x22364A,{roughness:.2,emissive:0x0b1622}]
+};
+function P(key,name,qty,group,root,off,desc,con,swatch,opts){
+ const g=new THREE.Group();root.add(g);
+ const p={key,name,qty,group,root,g,off:V(...off),desc,con,swatch,mats:[],dyn:(opts&&opts.dyn)||false,anchor:V(0,0,0),main:!!(opts&&opts.main),iron:!!(opts&&opts.iron),castable:[]};
+ parts.push(p);return p;
+}
+function mkMat(spec){const [c,o]=spec;return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.6,metalness:.05},o));}
+function add(p,geo,spec,pos,rot,parent){
+ let m;if(Array.isArray(spec[0])){m=spec.map(mkMat);p.mats.push(...m);}else{m=mkMat(spec);p.mats.push(m);}
+ const mesh=new THREE.Mesh(geo,m);mesh.castShadow=true;mesh.receiveShadow=true;p.castable.push(mesh);
+ if(pos)mesh.position.set(...pos);if(rot)mesh.rotation.set(...rot);(parent||p.g).add(mesh);return mesh;
+}
+const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d);
+const CY=(r,h,s)=>new THREE.CylinderGeometry(r,r,h,s||16);
+function boltZ(p,x,y,z,spec){ // washer + hex nut facing +z, starting at z
+ add(p,CY(1.0,.2,20),spec||C.zinc,[x,y,z+.1],[Math.PI/2,0,0]);
+ add(p,CY(.85,.6,6),spec||C.zinc,[x,y,z+.5],[Math.PI/2,0,0]);
+ add(p,CY(.45,.5,10),C.steel,[x,y,z+1.05],[Math.PI/2,0,0]);
+}
+function screwHead(p,x,y,z,r,axis,parent){const m=add(p,CY(r||.35,.2,12),C.screw,[x,y,z],axis==='x'?[0,0,Math.PI/2]:axis==='y'?[0,0,0]:[Math.PI/2,0,0],parent);return m;}
+
+// ===== PARTE FISSA
+const LX=[-55,55];
+const LZW=7.8; // asse gamba dal muro: tubo 43 × 75 mm
+const XB=x=>x-Math.sign(x)*7.35; // centro della scatola motore 19 × 10 × 5, con il tubo a un'estremità, verso l'interno
+const listoni=P('listoni','Listoni a muro','2 pezzi · abete lamellare 28 mm, 29 × 90 cm + listello 12 mm','Parte fissa',scene,[0,0,0],
+ 'Due tavole verticali, una dietro ogni gamba. Distribuiscono il carico sul muro e danno una base piana a staffe e omega. Sopra ognuna, un listello da 12 mm dietro il tubo della gamba.',
+ 'Al muro con 6 tasselli chimici M10 ciascuno. Il listello (multistrato 12 × 43 mm, lungo come il tubo grosso) serve perché il piede della gamba è più profondo del tubo: riempie lo spazio tra tubo e listone, così l\'omega stringe il tubo contro qualcosa di pieno.','#E0C796',{main:true});
+for(const x of LX){add(listoni,B(29,90,2.8),C.fir28,[x,90,1.4]);add(listoni,B(4.3,44,1.05),C.birch,[x,98.5,3.33]);}
+
+const gambe=P('gambe','Gambe FlexiSpot E1W Pro','2 pezzi · tubo grosso 43 × 75 mm, scatola motore 19 × 10 × 5,5 cm, da 66 a 115 cm','Parte fissa',scene,[0,-4,26],
+ 'Le due gambe del telaio FlexiSpot, senza piedi lunghi né traversa originale. In basso c\'è la scatola del motore (19 × 10 × 5,5 cm, con l\'etichetta), con il tubo a un\'estremità. Il lato da 75 mm del tubo va verso la stanza: così la gamba è più rigida quando ti appoggi in avanti. Corsa: 49 cm.',
+ 'La scatola del motore si appoggia nella vaschetta della staffa, con il lato da 19 lungo il muro e rivolta verso il centro, e si avvita nei fori che ha già sui fianchi. Non forarla. Il tubo grosso è stretto al listone da due omega. La testa si avvita sotto la piega della lastra con le sue 4 viti.','#2A2E33',{main:true});
+const legDyn=[];
+for(const x of LX){
+ add(gambe,B(19,5.5,10),C.black,[XB(x),73.75,LZW]);
+ add(gambe,B(4.3,44,7.5),[0x2A2E33,{metalness:.35,roughness:.45}],[x,98.5,LZW]);
+ legDyn.push({
+  mid:add(gambe,B(3.6,1,6.8),[0x34393E,{metalness:.4,roughness:.4}],[x,0,LZW]),
+  inn:add(gambe,B(2.9,1,6.1),[0x3E444A,{metalness:.45,roughness:.38}],[x,0,LZW]),
+  top:add(gambe,B(4.9,1,8.1),C.black,[x,0,LZW])
+ });
+}
+
+// ===== STRUTTURA DI FERRO
+const tasselli=P('tasselli','Tasselli chimici M10','20 pezzi · barra 15 cm, dado e rondella','Struttura di ferro',scene,[0,0,12],
+ 'Barre filettate incollate nel muro con la resina. Reggono listoni e staffe.',
+ '6 per listone, ai lati della gamba. Altri 4 per lato passano attraverso l\'ala della staffa e il listone. Fuori si stringono con rondella e dado.','#C7CBC2',{iron:true});
+for(const x of LX){for(const s of [-1,1])for(const y of [80,100,127])boltZ(tasselli,x+s*10.5,y,2.8);for(const s of [-1,1])for(const y of [51,63])boltZ(tasselli,XB(x)+s*6,y,3.4);}
+
+const staffe=P('staffe','Staffe a mensola','2 pezzi · acciaio saldato, ala 26 × 20 cm, braccio a vaschetta 20 × 10 cm','Struttura di ferro',scene,[0,-18,14],
+ 'Una staffa a L rinforzata sotto ogni gamba: porta il peso di tutto il mobile verso il muro. Il braccio è una vaschetta con il bordo da 3 cm: la scatola del motore ci sta dentro.',
+ 'L\'ala verticale si appoggia sul listone e va al muro con 4 tasselli M10. Sul braccio a vaschetta si appoggia la scatola del motore (19 × 10 cm), avvitata dal bordo nei fori che ha già sui fianchi. Il fazzoletto sotto impedisce che il braccio si pieghi.','#3C4248',{main:true,iron:true});
+const gus=shapeOf([[3.4,48],[3.4,70.2],[13,70.2]]);
+for(const x of LX){
+ const xb=XB(x);
+ add(staffe,B(20,26,.6),C.iron,[xb,58,3.1]);
+ add(staffe,B(20,.8,10.4),C.iron,[xb,70.6,8.2]);
+ add(staffe,B(20,3,.4),C.iron,[xb,72.5,13.2]);
+ for(const s2 of [-1,1])add(staffe,B(.4,3,10),C.iron,[xb+s2*9.8,72.5,8.2]);
+ const gg=new THREE.ExtrudeGeometry(gus,{depth:.6,bevelEnabled:false});gg.rotateY(-Math.PI/2);
+ add(staffe,gg,C.iron,[xb+.3,0,0]);
+ for(const sx of [-6,6])screwHead(staffe,xb+sx,72.5,13.5,.35);
+}
+
+const morsetti=P('morsetti','Morsetti a omega','4 pezzi · lamiera 4 mm piegata, alta 10 cm, interno 47 × 90 mm, ali da 40 mm','Struttura di ferro',scene,[0,0,30],
+ 'Una lamiera piegata a omega che abbraccia il tubo grosso della gamba e lo tiene contro il listone, senza forarlo. Così la gamba non si piega in avanti quando ti appoggi.',
+ 'Due per gamba, solo sul tubo grosso. Le due ali si fissano al muro con 2 barre M8 incollate ciascuna, che attraversano il listone. Dentro: il listello da 12 mm dietro il tubo e gomma da 2 mm davanti e ai lati. Non stringere troppo, o scatta l\'anticollisione.','#3C4248',{iron:true});
+for(const x of LX)for(const y of [83,114]){
+ for(const s of [-1,1]){
+  add(morsetti,B(.4,10,9.35),C.iron,[x+s*2.55,y,7.475]);
+  add(morsetti,B(4,10,.4),C.iron,[x+s*4.75,y,3.0]);
+  for(const dy of [-2.5,2.5])boltZ(morsetti,x+s*4.75,y+dy,3.2);
+ }
+ add(morsetti,B(5.5,10,.4),C.iron,[x,y,11.95]);
+ add(morsetti,B(4.3,8,.2),C.rubber,[x,y,11.65]);
+}
+
+// ===== PARTE MOBILE (coordinate del mobile: z muro = z locale + 4,6)
+const LZ=LZW-4.6;
+const lastra=P('lastra','Lastra a L','1 pezzo · lamiera 2 mm, 120 cm, piega 10,2 cm + parte verticale 45 cm','Struttura di ferro',moving,[0,20,40],
+ 'Una lamiera piegata a L. La piega in alto si appoggia sulle teste delle due gambe, centrata sul loro asse; la parte verticale scende per 45 cm, oltre metà gamba, e la schiena del mobile ci si avvita sopra. Porta su tutto il mobile e spalma la leva su 45 cm di schiena.',
+ 'Sulla piega: 4 viti per gamba nella testa della gamba. Sulla parte verticale: 12 bulloni M6 passanti nella schiena, con rondelle larghe dentro il mobile. Le viti del supporto monitor passano anche loro dalla lastra, che fa da contropiastra.','#3C4248',{main:true,iron:true});
+add(lastra,B(120,.2,10.2),C.iron,[0,137.1,3.5]);
+add(lastra,B(120,45,.2),C.iron,[0,114.8,8.5]);
+for(const x of LX)for(const sx of [-1.2,1.2])for(const dz of [-2.6,2.6])screwHead(lastra,x+sx,137.9,LZ+dz,.35,'y');
+for(const x of [-48,-24,24,48])for(const y of [97,115,131]){add(lastra,CY(.8,.15,16),C.zinc,[x,y,10.48],[Math.PI/2,0,0]);screwHead(lastra,x,y,10.65,.42);screwHead(lastra,x,y,8.1,.42);}
+
+const rinforzo=P('rinforzo','Rinforzo della piega','1 + 4 + 2 pezzi · tubo 40 × 40 × 2 mm, 4 fazzoletti 4 mm, 2 piastre 6 mm','Struttura di ferro',moving,[0,30,20],
+ 'Con la lamiera da 2 mm i rinforzi fanno quasi tutto il lavoro. Il tubo nell\'angolo regge la torsione tra le due gambe, i fazzoletti portano la leva dalla parte verticale alla piega, e una piastra da 6 mm sopra ogni testa di gamba impedisce alla lamiera sottile di piegarsi intorno alle viti.',
+ 'Il tubo 40 × 40 sta dentro l\'angolo della piega, tra le due gambe, saldato o imbullonato alla lastra. I fazzoletti triangolari 120 × 80 mm sono saldati tra piega e parte verticale, uno per lato di ogni gamba. Sopra la piega, su ogni gamba, una piastra 120 × 100 × 6 mm: le 4 viti della gamba passano piastra e lamiera insieme.','#3C4248',{iron:true});
+add(rinforzo,alongX(rectTube(4,4,.2),100),C.iron,[0,135,6.3]);
+const gus2=shapeOf([[8.3,137],[8.3,125],[0.3,137]]);
+for(const x of LX)add(rinforzo,B(12,.6,10),C.iron,[x,137.5,LZ]);
+for(const x of LX)for(const s of [-1,1]){
+ const gg=new THREE.ExtrudeGeometry(gus2,{depth:.4,bevelEnabled:false});gg.rotateY(-Math.PI/2);
+ add(rinforzo,gg,C.iron,[x+s*4.5+.2,0,0]);
+}
+
+const squadrette=P('squadrette','Squadrette interne','4 pezzi · acciaio 40 × 40 mm','Struttura di ferro',moving,[0,0,70],
+ 'Angolari negli spigoli interni tra schiena e fianchi. I cavi del piano tirano sui fianchi: le squadrette portano quella forza alla schiena senza affidarsi solo a colla e spinotti.',
+ 'Un\'ala avvitata alla schiena, l\'altra al fianco, con 2 viti da legno 4 × 25 per ala. Due per fianco, in alto e in basso.','#C7CBC2',{iron:true});
+for(const s of [-1,1])for(const y of [80,146]){
+ add(squadrette,B(4,4,.3),C.zinc,[s*63.7,y,10.55]);
+ add(squadrette,B(.3,4,4),C.zinc,[s*65.55,y,12.4]);
+}
+
+const mobile=P('mobile','Mobile in abete','1 pezzo · 135 × 80 × 22 cm, abete lamellare 18 mm','Parte mobile',moving,[0,0,64],
+ 'La scatola che contiene monitor e prese. Sale e scende con la traversa.',
+ 'La schiena è imbullonata alla parte verticale della lastra a L. Sotto c\'è la cerniera del piano.','#EAD7AE',{main:true});
+add(mobile,B(135,80,1.8),C.fir,[0,113,9.5]);
+for(const s of [-1,1]) add(mobile,B(1.8,80,22),C.fir,[s*66.6,113,19.6]);
+add(mobile,B(131.4,1.8,22),C.fir,[0,152.1,19.6]);
+add(mobile,B(131.4,1.8,22),C.fir,[0,73.9,19.6]);
+for(const x of [-40,40]) add(mobile,CY(.7,.4,16),[0x4A4F55,{metalness:.6}],[x,150.95,29.2]);
+
+const braccio=P('braccio','Supporto doppio per monitor','1 pezzo · barra fissa VESA 100 × 100, profondo 3 cm','Dentro il mobile',moving,[0,0,76],
+ 'Una barra fissa che tiene i due monitor affiancati, attaccati alla schiena del mobile. Fissa e sottile, perché il mobile è profondo solo 22 cm.',
+ 'La piastra centrale si avvita alla schiena con 4 bulloni M6 passanti: dietro la schiena c\'è già la lastra a L, che fa da rondella grande: i bulloni passano schiena e lastra. I monitor si agganciano agli attacchi VESA con 4 viti M4 ciascuno. I loro cavi escono dal foro in basso verso la ciabatta.','#2A2E33');
+add(braccio,B(8,14,1),C.black,[0,117,10.9]);
+add(braccio,B(76,2.4,2.4),C.black,[0,117,12.6]);
+for(const x of [-32,32]) add(braccio,B(10,10,.6),C.black,[x,117,14.1]);
+for(const x of [-2.5,2.5])for(const y of [112,122]){screwHead(braccio,x,y,11.5,.4);screwHead(braccio,x,y,8.2,.45);}
+
+const monitor=P('monitor','Monitor 27"','2 pezzi · 62 × 37 cm','Dentro il mobile',moving,[0,0,88],
+ 'I due schermi, profondi al massimo 3 cm senza piede.',
+ 'Avvitati agli attacchi VESA del braccio con 4 viti M4 ciascuno.','#1D2125');
+for(const x of [-32,32]) add(monitor,B(61.5,36.5,2.4),[[0x1D2125,{roughness:.5}],[0x1D2125,{roughness:.5}],[0x1D2125,{roughness:.5}],[0x1D2125,{roughness:.5}],C.screen,[0x1D2125,{roughness:.5}]],[x,117,15.6]);
+
+const centralina=P('centralina','Centralina e pulsantiera FlexiSpot','1 + 1 · memorie, anticollisione','Dentro il mobile',moving,[0,10,80],
+ 'La scatola che comanda i due motori e la pulsantiera con le memorie. Dentro c\'è il sensore dell\'anticollisione: deve stare ferma e in piano.',
+ 'La centralina si avvita ben ferma sopra il cielo del mobile, in orizzontale. La pulsantiera va sul fianco destro, verso di te. I cavi dei motori scendono lungo le gambe.','#2A2E33');
+add(centralina,B(26,3,8),C.black,[0,154.5,16]);
+add(centralina,B(1.6,4,14),C.black,[68.3,80,24]);
+for(let i=0;i<4;i++) add(centralina,CY(.5,.3,10),[0x8C9196,{roughness:.5}],[69.2,80,19+i*3],[0,0,Math.PI/2]);
+
+const prese=P('prese','Prese elettriche','ciabatta interna + multipresa frontale','Dentro il mobile',moving,[0,-12,82],
+ 'Alimentano monitor, centralina, portatile e telefono da un solo cavo verso il muro.',
+ 'La ciabatta è avvitata sul fondo del mobile. La multipresa con USB-A e USB-C è incassata nel fianco destro.','#F2F2EF');
+add(prese,B(30,3.5,5),C.plastic,[-25,76.55,22]);
+for(let i=0;i<4;i++) add(prese,CY(1.3,.2,20),[0x8C9196,{roughness:.6}],[-36+i*7,78.35,22]);
+add(prese,B(1.4,8,13),C.plastic,[64.95,92,22]);
+for(const z of [18.5,25.5]) add(prese,CY(1.4,.2,20),[0x8C9196,{roughness:.6}],[64.15,92,z],[0,0,Math.PI/2]);
+
+const cerniera=P('cerniera','Cerniera a pianoforte','2 pezzi · acciaio, 60 cm','Piano a ribalta',moving,[0,-10,96],
+ 'Cerniera continua lungo tutto il bordo inferiore: tiene il piano e lo fa ruotare.',
+ 'Un\'ala avvitata sul bordo del fondo del mobile, l\'altra sul bordo del piano. Apre a 180°.','#B9C0C5');
+add(cerniera,CY(.55,120,16),C.steel,[0,73,30.6],[0,0,Math.PI/2]);
+add(cerniera,B(120,1.6,.15),C.steel,[0,73.9,30.7]);
+
+const piano=P('piano','Piano a ribalta','1 pezzo · 131 × 78 cm, con quadro e serratura','Piano a ribalta',moving,[0,0,110],
+ 'Da chiuso copre i monitor e mostra il quadro. Da aperto è la scrivania.',
+ 'Ruota sulla cerniera. In alto ha la serratura che aggancia il cielo del mobile e due contropiastre per le calamite.','#EAD8B2',{main:true});
+const pivot=piano.g;
+const cv=document.createElement('canvas');cv.width=640;cv.height=380;const g2=cv.getContext('2d');
+g2.fillStyle='#EFEAE0';g2.fillRect(0,0,640,380);g2.fillStyle='#D9C9A8';g2.fillRect(0,250,640,130);
+g2.fillStyle='#3F6E73';g2.beginPath();g2.arc(430,175,92,0,Math.PI*2);g2.fill();
+g2.fillStyle='#C9784A';g2.fillRect(120,120,160,190);
+g2.strokeStyle='#2B2F33';g2.lineWidth=6;g2.beginPath();g2.moveTo(60,300);g2.bezierCurveTo(220,220,380,330,590,250);g2.stroke();
+g2.lineWidth=22;g2.strokeRect(11,11,618,358);
+const artTex=new THREE.CanvasTexture(cv);
+const pb=[0xEAD8B2,{roughness:.65}];
+add(piano,B(131,78,1.8),[pb,pb,pb,pb,[0xffffff,{map:artTex,roughness:.85}],pb],[0,39,.9]);
+add(piano,CY(1.1,.8,16),C.steel,[0,74,2.2],[Math.PI/2,0,0]);
+add(piano,B(2.6,.4,1.4),C.steel,[0,75.5,-.5]);
+for(const x of [-40,40]) add(piano,B(3,3,.2),C.steel,[x,76,-.1]);
+
+const pistoni=P('pistoni','Pistoni a gas per ribalta','2 pezzi · 244 mm, apertura ammortizzata','Piano a ribalta',moving,[0,10,98],
+ 'Frenano la discesa del piano. Non reggono il peso.',
+ 'Un attacco sul fianco interno del mobile, l\'altro sul piano a 28 cm dalla cerniera.','#2A2E33');
+const st={d:0,o:1,mode:'ass',sel:null,xray:true,labels:true,iron:false};
+const strutM=[0,1].map(()=>({body:add(pistoni,CY(.8,1,14),C.black),rod:add(pistoni,CY(.32,1,10),C.steel),a:add(pistoni,new THREE.SphereGeometry(.7,10,8),C.black),b:add(pistoni,new THREE.SphereGeometry(.7,10,8),C.black)}));
+
+const cavi=P('cavi','Cavi d\'acciaio con tenditore','2 pezzi · Ø 4 mm','Piano a ribalta',moving,[0,16,104],
+ 'Reggono il peso del piano aperto e di chi ci si appoggia.',
+ 'Dall\'alto del fianco del mobile al bordo del piano. Il tenditore a metà serve a regolarli.','#C7CBC2');
+const cableM=[0,1].map(()=>({w:add(cavi,CY(.2,1,8),C.steel),t:add(cavi,CY(.5,1,10),C.zinc)}));
+// ---------- dynamic placement helpers
+function placeCyl(mesh,a,b){const d=new THREE.Vector3().subVectors(b,a);const len=Math.max(d.length(),.001);mesh.position.copy(a).addScaledVector(d,.5);mesh.scale.set(1,len,1);mesh.quaternion.setFromUnitVectors(V(0,1,0),d.normalize());}
+const pivotBase=V(0,73,30.6);
+function flapPoint(x,y,rot){return V(x,y,.9).applyAxisAngle(V(1,0,0),rot).add(pivotBase);}
+
+// base positions + anchors for labels
+for(const p of parts){
+ p.base=p.g.position.clone();
+ const box=new THREE.Box3().setFromObject(p.g);
+ p.anchor=V((box.min.x+box.max.x)/2,box.max.y,(box.min.z+box.max.z)/2);
+ const A={listoni:[-55,135,2.8],tasselli:[-65.5,93.5,3.8],staffe:[47.65,74,13.4],gambe:[-55,105,8],lastra:[30,137.3,6],rinforzo:[-50,137,6],morsetti:[55,119,12.1],squadrette:[66,147,12],centralina:[0,156,16],mobile:[-66,153,30.6],prese:[64,88,22],cerniera:[50,73.6,30.6],piano:[0,0,0],pistoni:[63,90,40],cavi:[-63,120,40],monitor:[-32,135.5,16.6],braccio:[20,118.2,13.6]};
+ if(A[p.key])p.anchor=V(...A[p.key]);
+}
+pivot.position.copy(pivotBase);piano.base=pivotBase.clone();
+for(const p of parts) p.g.position.copy(p.base);
+
+// ---------- labels
+for(const p of parts){
+ const el=document.createElement('div');el.className='lbl';el.textContent=p.name.replace(/ \(.*\)/,'');el.hidden=true;
+ el.addEventListener('click',()=>select(p));stage.appendChild(el);p.el=el;
+}
+
+// ---------- list
+const list=document.getElementById('list');
+let lastGroup='';
+parts.forEach((p,i)=>{
+ if(p.group!==lastGroup){const li=document.createElement('li');li.className='grp';li.textContent=p.group;list.appendChild(li);lastGroup=p.group;}
+ const li=document.createElement('li');
+ li.innerHTML=`<button type="button" aria-pressed="false"><span class="n">${String(i+1).padStart(2,'0')}</span><span>${p.name}</span><span class="q">${p.qty.split(' · ')[0]}</span></button>`;
+ p.btn=li.querySelector('button');p.btn.addEventListener('click',()=>select(st.sel===p&&st.mode!=='iso'?null:p));
+ list.appendChild(li);
+});
+
+// ---------- info card
+const $=id=>document.getElementById(id);
+function fmt(n){return (Math.round(n*10)/10).toLocaleString('it-IT');}
+function showInfo(){
+ const p=st.sel;
+ if(!p){$('iNum').textContent='Nessun pezzo scelto';$('iName').textContent='Tocca un pezzo';$('iQty').textContent='Scegli un componente dall\'elenco o tocca un\'etichetta nel modello.';$('iDesc').textContent='';$('iConK').hidden=true;$('iCon').textContent='';$('iDims').textContent='';return;}
+ const i=parts.indexOf(p);
+ $('iNum').textContent=`Pezzo ${String(i+1).padStart(2,'0')} di ${parts.length} · ${p.group}`;
+ $('iName').textContent=p.name;$('iQty').textContent=p.qty;$('iDesc').textContent=p.desc;$('iConK').hidden=false;$('iCon').textContent=p.con;
+ const sv=p.g.position.clone();p.g.position.copy(p.base);
+ const rootPos=p.root.position.clone();p.root.position.set(0,0,0);scene.updateMatrixWorld(true);
+ const b=new THREE.Box3().setFromObject(p.g);const s=b.getSize(V(0,0,0));
+ p.root.position.copy(rootPos);p.g.position.copy(sv);scene.updateMatrixWorld(true);
+ $('iDims').textContent=`Ingombro${p.qty.startsWith('1 ')?'':' del gruppo'}: ${fmt(s.x)} × ${fmt(s.y)} × ${fmt(s.z)} cm (L × H × P)`;
+}
+
+// ---------- fading
+function applyFade(){
+ for(const p of parts){
+  let o=1;
+  if(st.mode!=='iso'){
+   if(st.xray&&p.key==='mobile')o=.16;
+   if(st.iron)o=p.iron?1:(p.key==='gambe'||p.key==='listoni')?.35:.06;
+   if(st.sel)o=(p===st.sel)?1:.07;
+  }
+  for(const m of p.mats){m.opacity=o;m.transparent=o<1;m.depthWrite=o>=1;m.needsUpdate=true;}
+  for(const m of p.castable)m.castShadow=o>=1;
+  p.g.visible=st.mode!=='iso'||p===st.sel;
+  if(p.btn)p.btn.setAttribute('aria-pressed',String(p===st.sel));
+ }
+ wall.visible=st.mode==='iso'?false:views[st.view].wall;floor.visible=st.mode!=='iso';
+}
+
+// ---------- camera
+const views={
+ iso:{p:[-200,180,250],t:[0,108,25],wall:true},
+ front:{p:[0,128,340],t:[0,108,30],wall:true},
+ side:{p:[-340,135,80],t:[0,108,30],wall:true},
+ back:{p:[170,150,-250],t:[0,112,8],wall:false},
+ axis:{p:[-215,118,16],t:[-55,118,16],wall:true}
+};
+const expViews={axis:{p:[-170,128,40],t:[-55,118,30]},iso:{p:[-300,220,380],t:[0,105,60]},front:{p:[0,130,470],t:[0,105,60]},side:{p:[-420,150,120],t:[0,105,60]},back:{p:[220,160,-300],t:[0,110,40]}};
+st.view='iso';
+let tween=null;
+function flyTo(p,t,instant){const to={p:V(...p),t:V(...t)};if(instant||reduce){camera.position.copy(to.p);controls.target.copy(to.t);tween=null;}else tween={fp:camera.position.clone(),ft:controls.target.clone(),to,k:0};}
+function goView(name,instant){st.view=name;
+ document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===name&&st.mode!=='iso')));
+ if(st.mode==='iso')setMode('ass');
+ const v=st.mode==='exp'?Object.assign({},views[name],expViews[name]):views[name];
+ wall.visible=views[name].wall;flyTo(v.p,v.t,instant);}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>goView(b.dataset.view));
+function frameIso(){
+ const p=st.sel;if(!p)return;
+ scene.updateMatrixWorld(true);
+ const b=new THREE.Box3().setFromObject(p.g);const c=b.getCenter(V(0,0,0));const s=b.getSize(V(0,0,0));
+ const r=Math.max(s.x,s.y,s.z,6)/2;const dist=r/Math.tan(camera.fov*Math.PI/360)*1.35;
+ const dir=V(-.55,.42,.72).normalize();
+ flyTo([c.x+dir.x*dist,c.y+dir.y*dist,c.z+dir.z*dist],[c.x,c.y,c.z]);
+}
+
+// ---------- modes & selection
+let explodeT=0;
+function setMode(m){
+ st.mode=m;
+ for(const [id,k] of [['mAss','ass'],['mExp','exp'],['mIso','iso']])$(id).setAttribute('aria-pressed',String(k===m));
+ if(m==='iso'&&!st.sel){st.sel=parts[0];showInfo();}
+ applyFade();
+ if(m==='iso'){explodeTarget=0;setTimeout(frameIso,0);}
+ else{const v=m==='exp'?Object.assign({},views[st.view],expViews[st.view]):views[st.view];flyTo(v.p,v.t);}
+ explodeTarget=m==='exp'?1:0;
+ document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===st.view&&m!=='iso')));
+}
+let explodeTarget=0;
+$('mAss').onclick=()=>setMode('ass');$('mExp').onclick=()=>setMode('exp');$('mIso').onclick=()=>setMode('iso');
+function select(p){st.sel=p;showInfo();applyFade();if(st.mode==='iso'){if(!p)setMode('ass');else frameIso();}}
+$('prev').onclick=()=>{const i=st.sel?parts.indexOf(st.sel):0;select(parts[(i-1+parts.length)%parts.length]);};
+$('next').onclick=()=>{const i=st.sel?parts.indexOf(st.sel):-1;select(parts[(i+1)%parts.length]);};
+$('clear').onclick=()=>{st.sel=null;showInfo();if(st.mode==='iso')setMode('ass');else applyFade();};
+
+// ---------- other controls
+const hIn=$('h');
+function setH(v){st.d=Math.max(0,Math.min(49,v-73));hIn.value=73+st.d;}
+hIn.addEventListener('input',()=>setH(+hIn.value));
+$('sit').onclick=()=>setH(73);$('stand').onclick=()=>setH(110);
+$('flap').onclick=()=>{st.o=st.o?0:1;$('flap').setAttribute('aria-pressed',String(!!st.o));};
+$('xray').onclick=()=>{st.xray=!st.xray;$('xray').setAttribute('aria-pressed',String(st.xray));applyFade();};
+$('iron').onclick=()=>{st.iron=!st.iron;$('iron').setAttribute('aria-pressed',String(st.iron));applyFade();};
+document.querySelectorAll('[data-part]').forEach(b=>b.onclick=()=>{const p=parts.find(q=>q.key===b.dataset.part);if(p){select(p);stage.scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});}});
+$('labels').onclick=()=>{st.labels=!st.labels;$('labels').setAttribute('aria-pressed',String(st.labels));};
+
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);resize();
+applyFade();goView('iso',true);showInfo();
+
+// ---------- loop
+const cur={d:0,o:1,e:0};const tmp=V(0,0,0);const readout=$('readout');
+function frame(){
+ const k=reduce?1:.12;
+ cur.d+=(st.d-cur.d)*k;cur.o+=(st.o-cur.o)*k;cur.e+=(explodeTarget-cur.e)*k;
+ moving.position.y=cur.d;
+ for(const p of parts){p.g.position.copy(p.base).addScaledVector(p.off,cur.e);if(p.dyn)p.g.position.y+=cur.d;}
+ const rot=cur.o*Math.PI/2;pivot.rotation.x=rot;
+ // gambe telescopiche (coordinate del gruppo gambe)
+ const top=136+cur.d;const midTop=120.5+(top-120.5)*.5;
+ for(const g of legDyn){
+  g.mid.scale.y=midTop-118.5;g.mid.position.y=118.5+g.mid.scale.y/2;
+  g.inn.scale.y=top-(midTop-2);g.inn.position.y=(midTop-2)+g.inn.scale.y/2;
+  g.top.position.y=top+.5;
+ }
+ // pistoni e cavi (coordinate del mobile)
+ [-63,63].forEach((x,i)=>{
+  const A=V(x,98,26.2),Pp=flapPoint(x,28,rot);const M=A.clone().lerp(Pp,.55);
+  const s=strutM[i];placeCyl(s.body,A,M);placeCyl(s.rod,M,Pp);s.a.position.copy(A);s.b.position.copy(Pp);
+  const c=cableM[i];const A2=V(x,150,28.7),B2=flapPoint(x,76,rot);
+  const vis=cur.o>.92||st.mode==='iso';c.w.visible=c.t.visible=vis;
+  if(vis){placeCyl(c.w,A2,B2);const T1=A2.clone().lerp(B2,.32),T2=A2.clone().lerp(B2,.42);placeCyl(c.t,T1,T2);}
+ });
+ if(tween){tween.k=Math.min(1,tween.k+.05);const e=1-Math.pow(1-tween.k,3);camera.position.lerpVectors(tween.fp,tween.to.p,e);controls.target.lerpVectors(tween.ft,tween.to.t,e);if(tween.k>=1)tween=null;}
+ controls.update();renderer.render(scene,camera);
+ const w=stage.clientWidth,h=stage.clientHeight;
+ for(const p of parts){
+  let show=st.labels&&st.mode!=='iso'&&(st.sel?p===st.sel:(st.mode==='exp'||(st.iron?p.iron:p.main)));
+  if(!show){p.el.hidden=true;continue;}
+  if(p.key==='piano')tmp.copy(flapPoint(-30,55,rot)).add(p.off.clone().multiplyScalar(cur.e));
+  else tmp.copy(p.anchor).add(p.g.position).sub(p.base);
+  p.root.localToWorld(tmp);tmp.project(camera);
+  if(tmp.z>1||Math.abs(tmp.x)>1.05||Math.abs(tmp.y)>1.05){p.el.hidden=true;continue;}
+  p.el.hidden=false;p.el.classList.toggle('on',p===st.sel);
+  p.el.style.transform=`translate(${(tmp.x+1)/2*w}px,${(1-tmp.y)/2*h}px) translate(-50%,calc(-100% - 7px))`;
+ }
+ const d=Math.round(cur.d);
+ readout.textContent=st.mode==='iso'&&st.sel?`${st.sel.name} · ${st.sel.qty}`:`Piano a ${73+d} cm · cima del mobile a ${153+d} cm · salita ${d} cm su 49`;
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
